@@ -1,0 +1,86 @@
+import os, base64, re, html
+from dotenv import load_dotenv
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.chains import RetrievalQA
+from django.http import JsonResponse
+from google_auth_oauthlib.flow import Flow
+from django.shortcuts import redirect
+
+load_dotenv()
+
+# Utility: decode base64 Gmail message parts
+def extract_text_from_payload(payload):
+    parts = payload.get("parts", [])
+    for part in parts:
+        if part.get("mimeType") == "text/plain":
+            data = part.get("body", {}).get("data")
+            if data:
+                return base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
+    return ""
+
+# Step 1: Get and clean email content
+def get_emails_from_gmail(session_credentials):
+    creds = Credentials(**session_credentials)
+    service = build('gmail', 'v1', credentials=creds)
+
+    results = service.users().messages().list(userId='me', maxResults=100, q="category:primary").execute()
+    message_ids = results.get("messages", [])
+
+    emails = []
+    for msg in message_ids:
+        msg_data = service.users().messages().get(userId='me', id=msg['id']).execute()
+        payload = msg_data.get("payload", {})
+        body = extract_text_from_payload(payload) or msg_data.get("snippet", "")
+        cleaned = html.unescape(re.sub(r'[\u034f\u200c\ufeff]+', '', body)).strip()
+        if cleaned:
+            emails.append(cleaned)
+    return emails
+
+# Step 2: Build RAG chain
+def build_email_qa_chain(emails):
+    embeddings = OpenAIEmbeddings()
+    vectorstore = Chroma.from_texts(emails, embedding=embeddings)
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(model="gpt-3.5-turbo"),
+        retriever=vectorstore.as_retriever()
+    )
+    return qa_chain
+
+def oauth2callback(request):
+    # ... (OAuth flow)
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+                "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+                "redirect_uris": ["http://localhost:8000/oauth2callback/"],
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
+        scopes=['https://www.googleapis.com/auth/gmail.readonly'],
+        redirect_uri="http://localhost:8000/oauth2callback/"
+    )
+    credentials = flow.credentials
+    request.session['credentials'] = credentials_to_dict(credentials)
+    return redirect('/ask')  # or return a success response
+
+def email_assistant_view(request):
+    creds = request.session.get('credentials')
+    if not creds:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+    # ... fetch emails and answer question ...
+
+def credentials_to_dict(credentials):
+    return {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }

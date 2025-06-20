@@ -18,10 +18,11 @@ from django.contrib import admin
 from django.urls import path
 from .login_email import gmail_login, oauth2callback
 from .fetch_email_utils import fetch_gmail_messages
-from . import views
+from .views import EmailAssistantView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('gmail/login/', gmail_login, name='gmail_login'),
     path('oauth2callback/', oauth2callback, name='oauth2callback'),
-    path('gmail/fetch/', fetch_gmail_messages, name='fetch_gmail')
+    path('gmail/fetch/', fetch_gmail_messages, name='fetch_gmail'),
+    path('email/ask/', EmailAssistantView.as_view(), name='email_assistant'),
 ]

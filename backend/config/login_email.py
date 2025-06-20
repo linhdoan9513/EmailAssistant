@@ -65,8 +65,7 @@ def oauth2callback(request):
 
     # Store credentials in session for now
     request.session['credentials'] = credentials_to_dict(credentials)
-
-    return JsonResponse({"message": "Successfully authenticated with Gmail!"})
+    return redirect('http://localhost:3000/ask')
 
 def credentials_to_dict(credentials):
     return {
