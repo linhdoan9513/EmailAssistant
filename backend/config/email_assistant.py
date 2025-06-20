@@ -2,8 +2,7 @@ import os, base64, re, html
 from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from django.http import JsonResponse
@@ -71,6 +70,7 @@ def oauth2callback(request):
 
 def email_assistant_view(request):
     creds = request.session.get('credentials')
+    print(f"{request}")
     if not creds:
         return JsonResponse({'error': 'Not authenticated'}, status=401)
     # ... fetch emails and answer question ...

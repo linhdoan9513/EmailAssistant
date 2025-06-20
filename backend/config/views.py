@@ -1,4 +1,3 @@
-
 from django.http import JsonResponse
 from django.http import HttpRequest
 from rest_framework.views import APIView
@@ -22,7 +21,8 @@ class EmailAssistantView(APIView):
         try:
             emails = get_emails_from_gmail(creds)
             qa_chain = build_email_qa_chain(emails)
-            answer = qa_chain.run(question)
+            answer_obj = qa_chain.invoke({"query": question})
+            answer = answer_obj["result"] if isinstance(answer_obj, dict) and "result" in answer_obj else answer_obj
             return Response({"answer": answer})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
