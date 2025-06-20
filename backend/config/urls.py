@@ -17,9 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from .login_email import gmail_login, oauth2callback
+from .fetch_email_utils import fetch_gmail_messages
 from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('gmail/login/', gmail_login, name='gmail_login'),
     path('oauth2callback/', oauth2callback, name='oauth2callback'),
+    path('gmail/fetch/', fetch_gmail_messages, name='fetch_gmail')
 ]

@@ -1,34 +1,38 @@
-from langchain_core.documents import Document
-import imaplib, email
-from email.header import decode_header
-from dotenv import load_dotenv
-import os
+import re
+import html
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from django.http import JsonResponse
 
-def fetch_emails():
-    load_dotenv()
-    email_address = os.getenv('EMAIL_ADDRESS')
-    email_password = os.getenv('EMAIL_PASSWORD')
-    mail = imaplib.IMAP4_SSL("imap.gmail.com")
-    mail.login(email_address, email_password)
-    mail.select("inbox")
-    status, messages = mail.search(None, "ALL")
+def clean_snippet(text):
+    # Decode HTML entities
+    text = html.unescape(text)
+    # Remove invisible Unicode characters
+    text = re.sub(r'[\u034f\u200c\ufeff]+', '', text)
+    return text.strip()
 
-    docs = []
-    for num in messages[0].split()[:100]:
-        _, msg_data = mail.fetch(num, "(RFC822)")
-        msg = email.message_from_bytes(msg_data[0][1])
-        subject, _ = decode_header(msg["Subject"])[0]
-        sender = msg.get("From")
-        date = msg.get("Date")
+def fetch_gmail_messages(request):
+    credentials_data = request.session.get("credentials")
 
-        body = ""
-        if msg.is_multipart():
-            for part in msg.walk():
-                if part.get_content_type() == "text/plain":
-                    body = part.get_payload(decode=True).decode()
-                    break
-        else:
-            body = msg.get_payload(decode=True).decode()
+    if not credentials_data:
+        return JsonResponse({"error": "No credentials found"}, status=401)
 
-        docs.append(Document(page_content=body, metadata={"subject": subject, "from": sender, "date": date}))
-    return docs
+    creds = Credentials(**credentials_data)
+    service = build('gmail', 'v1', credentials=creds)
+
+    # ✅ Only fetch messages from Primary category
+    results = service.users().messages().list(
+        userId='me',
+        maxResults=100,
+        q="category:primary"
+    ).execute()
+
+    message_ids = results.get('messages', [])
+    emails = []
+
+    for msg in message_ids:
+        msg_data = service.users().messages().get(userId='me', id=msg['id']).execute()
+        snippet = msg_data.get("snippet", "")
+        emails.append(clean_snippet(snippet))
+
+    return JsonResponse({"emails": emails})
