@@ -63,8 +63,15 @@ def oauth2callback(request):
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
 
-    # Store credentials in session for now
+    # Fetch the user's email using Gmail API
+    service = build('gmail', 'v1', credentials=credentials)
+    profile = service.users().getProfile(userId='me').execute()
+    user_email = profile['emailAddress']
+
+    # Store credentials and email in session
     request.session['credentials'] = credentials_to_dict(credentials)
+    request.session['user_email'] = user_email
+
     return redirect('http://localhost:3000/ask')
 
 def credentials_to_dict(credentials):

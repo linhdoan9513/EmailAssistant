@@ -29,3 +29,13 @@ class EmailAssistantView(APIView):
 
     def get(self, request):
         return Response({"message": "POST a JSON body with a 'question' field."})
+
+def user_profile(request):
+    creds = request.session.get("credentials")
+    if not creds:
+        return JsonResponse({"error": "Not authenticated"}, status=401)
+    # If you store the user's email in the session during login, retrieve it here:
+    email = request.session.get("user_email")
+    if not email:
+        return JsonResponse({"error": "Email not found"}, status=404)
+    return JsonResponse({"email": email})
