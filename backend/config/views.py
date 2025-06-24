@@ -39,3 +39,7 @@ def user_profile(request):
     if not email:
         return JsonResponse({"error": "Email not found"}, status=404)
     return JsonResponse({"email": email})
+
+def gmail_logout(request):
+    request.session.flush()  # Clears all session data
+    return JsonResponse({"message": "Logged out successfully."})
