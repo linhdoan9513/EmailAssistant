@@ -3,17 +3,17 @@ services:
     name: django-backend
     env: python
 
-    rootDir: backend  # 👈 This tells Render to run everything from inside /backend
-
     buildCommand: |
-      pip install -r ../requirements.txt
-      python manage.py collectstatic --noinput
+      pip install -r requirements.txt
+      python backend/manage.py collectstatic --noinput
 
-    startCommand: gunicorn config.wsgi:application
+    startCommand: gunicorn backend.config.wsgi:application
 
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: config.settings
+        value: backend.config.settings
+      - key: PYTHONPATH
+        value: backend
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
