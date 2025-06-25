@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from django.conf import settings
 
 load_dotenv()
 
@@ -37,8 +38,6 @@ def gmail_login(request):
     request.session['google_auth_state'] = state
     return redirect(auth_url)
 
-
-# Step 2: Handle Google redirect
 def oauth2callback(request):
     state = request.session.get('google_auth_state')
     if not state:
@@ -71,10 +70,8 @@ def oauth2callback(request):
     request.session['credentials'] = credentials_to_dict(credentials)
     request.session['user_email'] = user_email
 
-    # ✅ Redirect to correct frontend
-    frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
-    return redirect(f"{frontend_base}/ask")
-
+    # ✅ Use settings-based frontend redirect
+    return redirect(settings.FRONTEND_REDIRECT_URL)
 
 def credentials_to_dict(credentials):
     return {
