@@ -4,8 +4,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .email_assistant import get_emails_from_gmail, build_email_qa_chain
 
+from django.conf import settings
+from django.shortcuts import redirect
+
 def oauth2callback(request):
-    return JsonResponse({"message": "OAuth callback reached!"})
+    return redirect(settings.FRONTEND_REDIRECT_URL)
 
 
 class EmailAssistantView(APIView):

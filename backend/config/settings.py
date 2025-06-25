@@ -19,8 +19,10 @@ ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
 
 if ENVIRONMENT == "production":
     REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://emailassistant.onrender.com/oauth2callback/")
+    FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL", "https://emailassistant-fe.onrender.com/ask")
 else:
     REDIRECT_URI = "http://localhost:8000/oauth2callback/"
+    FRONTEND_REDIRECT_URL = "http://localhost:3000/ask"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
