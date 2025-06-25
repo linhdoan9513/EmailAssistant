@@ -19,7 +19,7 @@ ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
 
 if ENVIRONMENT == "production":
     REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://emailassistant.onrender.com/oauth2callback/")
-    FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL", "https://emailassistantfe.onrender.com/ask")
+    FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL", "https://emailassistantfe.onrender.com/email/ask")
 else:
     REDIRECT_URI = "http://localhost:8000/oauth2callback/"
     FRONTEND_REDIRECT_URL = "http://localhost:3000/ask"
@@ -91,7 +91,6 @@ TEMPLATES = [
 CORS_ALLOWED_ORIGINS = [
          "http://localhost:3000",
          "https://emailassistantfe.onrender.com",
-         
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
