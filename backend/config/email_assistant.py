@@ -8,6 +8,7 @@ from langchain.chains import RetrievalQA
 from django.http import JsonResponse
 from google_auth_oauthlib.flow import Flow
 from django.shortcuts import redirect
+from django.conf import settings
 
 load_dotenv()
 
@@ -50,23 +51,26 @@ def build_email_qa_chain(emails):
     return qa_chain
 
 def oauth2callback(request):
-    # ... (OAuth flow)
     flow = Flow.from_client_config(
         {
             "web": {
                 "client_id": os.getenv("GOOGLE_CLIENT_ID"),
                 "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-                "redirect_uris": ["http://localhost:8000/oauth2callback/"],
+                "redirect_uris": [settings.REDIRECT_URI],  # ✅ use from settings
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
             }
         },
         scopes=['https://www.googleapis.com/auth/gmail.readonly'],
-        redirect_uri="http://localhost:8000/oauth2callback/"
+        redirect_uri=settings.REDIRECT_URI  # ✅ use from settings
     )
+
+    flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
     request.session['credentials'] = credentials_to_dict(credentials)
-    return redirect('/ask')  # or return a success response
+
+    return redirect('/ask')  # Or your frontend path
+
 
 def email_assistant_view(request):
     creds = request.session.get('credentials')

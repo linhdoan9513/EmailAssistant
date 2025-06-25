@@ -1,15 +1,16 @@
-from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
-from django.shortcuts import redirect
-from django.http import JsonResponse
 import os
 from dotenv import load_dotenv
+from django.conf import settings
+from django.shortcuts import redirect
+from django.http import JsonResponse
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+
 load_dotenv()
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-REDIRECT_URI = 'http://localhost:8000/oauth2callback/'
 
 # Step 1: Redirect to Google login
 def gmail_login(request):
@@ -18,30 +19,28 @@ def gmail_login(request):
             "web": {
                 "client_id": GOOGLE_CLIENT_ID,
                 "client_secret": GOOGLE_CLIENT_SECRET,
-                "redirect_uris": [REDIRECT_URI],
+                "redirect_uris": [settings.REDIRECT_URI],  # ✅ Use from settings
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
             }
         },
         scopes=SCOPES,
-        redirect_uri=REDIRECT_URI
+        redirect_uri=settings.REDIRECT_URI  # ✅ Use from settings
     )
 
-    # ✅ Get both auth_url and state explicitly
     auth_url, state = flow.authorization_url(
         access_type='offline',
         prompt='consent',
         include_granted_scopes='true'
     )
 
-    request.session['google_auth_state'] = state  # ✅ this now works
+    request.session['google_auth_state'] = state
     return redirect(auth_url)
 
 
 # Step 2: Handle Google redirect
 def oauth2callback(request):
     state = request.session.get('google_auth_state')
-
     if not state:
         return JsonResponse({"error": "Missing OAuth state in session"}, status=400)
 
@@ -50,29 +49,32 @@ def oauth2callback(request):
             "web": {
                 "client_id": GOOGLE_CLIENT_ID,
                 "client_secret": GOOGLE_CLIENT_SECRET,
-                "redirect_uris": [REDIRECT_URI],
+                "redirect_uris": [settings.REDIRECT_URI],
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
             }
         },
         scopes=SCOPES,
         state=state,
-        redirect_uri=REDIRECT_URI
+        redirect_uri=settings.REDIRECT_URI
     )
 
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
 
-    # Fetch the user's email using Gmail API
+    # Fetch user email
     service = build('gmail', 'v1', credentials=credentials)
     profile = service.users().getProfile(userId='me').execute()
     user_email = profile['emailAddress']
 
-    # Store credentials and email in session
+    # Save to session
     request.session['credentials'] = credentials_to_dict(credentials)
     request.session['user_email'] = user_email
 
-    return redirect('http://localhost:3000/ask')
+    # ✅ Redirect to correct frontend
+    frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
+    return redirect(f"{frontend_base}/ask")
+
 
 def credentials_to_dict(credentials):
     return {

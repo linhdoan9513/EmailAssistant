@@ -12,6 +12,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+import os
+
+# Set DJANGO_ENV to 'production' on Render, and default to 'development' locally
+ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
+
+if ENVIRONMENT == "production":
+    REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://emailassistant.onrender.com/oauth2callback/")
+else:
+    REDIRECT_URI = "http://localhost:8000/oauth2callback/"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
