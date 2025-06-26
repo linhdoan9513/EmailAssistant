@@ -89,8 +89,9 @@ TEMPLATES = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-         "http://localhost:3000",
-         "https://emailassistant.onrender.com",
+        "http://localhost:3000",
+        "https://emailassistant.onrender.com",
+        "https://emailassistantfe.onrender.com",
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
