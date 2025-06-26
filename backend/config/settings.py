@@ -37,7 +37,7 @@ SECRET_KEY = 'django-insecure-8o^l_i*@@rkjvwgxwk72d47b^8s0yr*#_^@&!+$rli93eg5zup
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG=False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "emailassistant.onrender.com"]
+ALLOWED_HOSTS = ["emailassistant.onrender.com", "emailassistantfe.onrender.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -158,3 +158,10 @@ REST_FRAMEWORK = {
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# settings.py
+
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"  # Optional, default for simplicity
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
