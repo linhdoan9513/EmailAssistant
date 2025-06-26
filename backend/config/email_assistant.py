@@ -69,7 +69,7 @@ def oauth2callback(request):
     credentials = flow.credentials
     request.session['credentials'] = credentials_to_dict(credentials)
 
-    return redirect('/ask')  # Or your frontend path
+    return redirect('/email/ask')  # Or your frontend path
 
 
 def email_assistant_view(request):

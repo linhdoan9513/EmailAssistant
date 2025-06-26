@@ -19,10 +19,10 @@ ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
 
 if ENVIRONMENT == "production":
     REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://emailassistant.onrender.com/oauth2callback/")
-    FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL", "https://emailassistant.onrender.com/gmail/fetch/")
+    FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL", "https://emailassistant.onrender.com/email/ask/")
 else:
     REDIRECT_URI = "http://localhost:8000/oauth2callback/"
-    FRONTEND_REDIRECT_URL = "http://localhost:3000/gmail/fetch/"
+    FRONTEND_REDIRECT_URL = "http://localhost:3000/email/ask/"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# SECURITY WARNING: keep the secret key used in production secret! 
 SECRET_KEY = 'django-insecure-8o^l_i*@@rkjvwgxwk72d47b^8s0yr*#_^@&!+$rli93eg5zup'
 
 # SECURITY WARNING: don't run with debug turned on in production!
