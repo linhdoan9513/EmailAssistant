@@ -5,9 +5,10 @@ import base64
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from django.http import JsonResponse
+from django.utils.html import escape
 
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 
 CHROMA_DIR = "./chroma_db"
@@ -82,5 +83,12 @@ def fetch_gmail_messages(request):
         "stored": len(documents),
         "collection": "gmail_emails",
         "vector_db_path": os.path.abspath(CHROMA_DIR),
-        "emails": [doc.metadata for doc in documents]
+        "emails": [
+            {
+                "subject": doc.metadata.get("subject", ""),
+                "from": doc.metadata.get("from", ""),
+                "body": escape(doc.page_content).replace("\n", "<br>")
+            }
+            for doc in documents
+        ]
     })

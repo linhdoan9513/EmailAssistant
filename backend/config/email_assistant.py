@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.vectorstores import Chroma
+from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from django.http import JsonResponse
 from google_auth_oauthlib.flow import Flow
@@ -21,6 +21,29 @@ def extract_text_from_payload(payload):
             if data:
                 return base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
     return ""
+
+CHROMA_DB_DIR = "./chroma_db"  # Path must match your previous write location
+def build_email_qa_chain_from_chroma():
+    embeddings = OpenAIEmbeddings()
+    
+    vectorstore = Chroma(
+        embedding_function=embeddings,
+        persist_directory=CHROMA_DB_DIR,
+        collection_name="gmail_emails"
+    )
+
+    retriever = vectorstore.as_retriever(
+        search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.5}
+    )
+
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=ChatOpenAI(model="gpt-3.5-turbo", temperature=0),
+        retriever=retriever,
+        chain_type="map_reduce",  # ✅ avoids stuffing too many tokens
+        return_source_documents=True  # Optional: helpful for debugging
+    )
+
+    return qa_chain
 
 # Step 1: Get and clean email content
 def get_emails_from_gmail(session_credentials):
