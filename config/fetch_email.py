@@ -14,7 +14,8 @@ from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 from .email_cache import load_processed_ids, save_processed_ids, chroma_collection_name
 import traceback
-import hashlib
+
+# from django.contrib.auth.decorators import login_required
 
 CHROMA_DIR = "./chroma_db"
 
@@ -63,10 +64,6 @@ def get_message_ids(service, max_results=100, query="category:primary"):
     return results.get("messages", [])
 
 
-def compute_hash(text):
-    return hashlib.sha256(text.encode()).hexdigest()
-
-
 def build_documents_from_messages(service, message_ids):
     documents = []
 
@@ -92,13 +89,7 @@ def build_documents_from_messages(service, message_ids):
         documents.append(
             Document(
                 page_content=combined_content,
-                metadata={
-                    "doc_hash": compute_hash(combined_content),
-                    "subject": subject,
-                    "from": sender,
-                    "thread_id": thread_id,
-                    "gmail_id": msg["id"],
-                },
+                metadata={"subject": subject, "from": sender, "thread_id": thread_id},
             )
         )
 
@@ -106,7 +97,7 @@ def build_documents_from_messages(service, message_ids):
 
 
 def store_documents_in_vector_db(documents, user_id: str):
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     split_docs = splitter.split_documents(documents)
 
     Chroma.from_documents(
@@ -148,24 +139,11 @@ def load_existing_threads_from_chroma(user_id: str):
         persist_directory=CHROMA_DIR,
         collection_name=chroma_collection_name(user_id),
     )
-    # docs = vectorstore.similarity_search("inbox", k=200)
-    docs = vectorstore.get()
-    print(f"📦 Found {len(docs['documents'])} stored documents.")
-
-    # Rebuild Document objects
-    documents = [
-        Document(page_content=doc, metadata=meta)
-        for doc, meta in zip(docs["documents"], docs["metadatas"])
-    ]
-
-    if not documents:
-        return JsonResponse({"message": "No stored documents found."})
-
-    # Group by thread
-    threads = group_documents_by_thread(documents)
+    docs = vectorstore.similarity_search("inbox", k=200)  # dummy query
+    threads = group_documents_by_thread(docs)
     return JsonResponse(
         {
-            "stored": len(documents),
+            "stored": 0,
             "collection": chroma_collection_name(user_id),
             "vector_db_path": os.path.abspath(CHROMA_DIR),
             "threads": threads,
@@ -189,7 +167,7 @@ def load_gmail_threads_to_chroma(request):
         # 3️⃣  Build the Gmail service
         gmail_service = build("gmail", "v1", credentials=creds)
 
-        profile = gmail_service.users().getProfile(userId="me").execute()
+        # profile = gmail_service.users().getProfile(userId="me").execute()
 
         # 4️⃣  Fetch message IDs from Primary tab
         all_message_ids = get_message_ids(gmail_service)  # <- unchanged helper
