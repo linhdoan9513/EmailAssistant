@@ -1,0 +1,16 @@
+.env
+# Ignore Python cache files
+__pycache__/
+/*.pyc
+*.pyo
+*.pyd
+# SQLite DB
+db.sqlite3
+
+# Static files
+/staticfiles/
+/backend/staticfiles/
+/chroma_db/
+*.sqlite3
+*.pickle
+*.bin
