@@ -28,7 +28,6 @@ def get_credentials(request):
 
 class EmailAssistantView(APIView):
     def post(self, request):
-        print(f"🤩 running line 31")
         question = request.data.get("question")
 
         if not question:
@@ -46,28 +45,16 @@ class EmailAssistantView(APIView):
             return JsonResponse({"error": "No Gmail credentials found"}, status=401)
 
         try:
-            qa_chain = build_email_qa_chain_from_chroma()
-            answer_obj = qa_chain.invoke({"query": question})
-            # ✅ Extract answer + retrieved documents
-            if isinstance(answer_obj, dict):
-                answer = (
-                    answer_obj.get("result") or answer_obj.get("answer") or "No answer."
-                )
-                source_docs = answer_obj.get("source_documents", [])
-            else:
-                print(f"runnign line 58")
-                answer = answer_obj
-                source_docs = []
+            qa_chain = build_email_qa_chain_from_chroma(user_id)
+            result = qa_chain.invoke({"query": question})
+            print(f"🔍 Retrieved {len(result['source_documents'])} source docs:")
 
-            # ✅ Optional: Print to console for debugging
-            print("\n🔍 Retrieved Documents:")
-            print(f"\n🔍 Source: ${source_docs}")
-            for i, doc in enumerate(source_docs):
-                print(
-                    f"[{i+1}] {doc.metadata.get('subject', 'No Subject')} - {doc.metadata.get('from', '')}"
-                )
-                print(doc.page_content[:300])
-                print("---")
+            if isinstance(result, dict):
+                answer = result.get("result") or result.get("answer") or "No answer."
+                source_docs = result.get("source_documents", [])
+            else:
+                answer = result
+                source_docs = []
 
             return Response(
                 {
@@ -82,12 +69,6 @@ class EmailAssistantView(APIView):
                     ],
                 }
             )
-            # answer = (
-            #     answer_obj["result"]
-            #     if isinstance(answer_obj, dict) and "result" in answer_obj
-            #     else answer_obj
-            # )
-            # return Response({"answer": answer})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

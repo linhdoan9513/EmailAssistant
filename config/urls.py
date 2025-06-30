@@ -25,8 +25,6 @@ from .views import EmailAssistantView, user_profile, gmail_logout
 
 
 def home(request):
-    print("Session keys:", list(request.session.keys()))
-    print("Session ID:", request.COOKIES.get("sessionid"))
     return HttpResponse("Welcome to Email Assistant!")
 
 
