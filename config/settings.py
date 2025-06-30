@@ -164,6 +164,8 @@ REST_FRAMEWORK = {
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "https://emailassistant.onrender.com",
+    "https://emailassistantfe.onrender.com",
 ]
 
 STATIC_URL = "/static/"

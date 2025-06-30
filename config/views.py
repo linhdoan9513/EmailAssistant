@@ -28,7 +28,6 @@ def get_credentials(request):
 
 class EmailAssistantView(APIView):
     def post(self, request):
-        print(f"🤩 running line 31")
         question = request.data.get("question")
 
         if not question:
@@ -46,7 +45,7 @@ class EmailAssistantView(APIView):
             return JsonResponse({"error": "No Gmail credentials found"}, status=401)
 
         try:
-            qa_chain = build_email_qa_chain_from_chroma()
+            qa_chain = build_email_qa_chain_from_chroma(user_id)
             answer_obj = qa_chain.invoke({"query": question})
             # ✅ Extract answer + retrieved documents
             if isinstance(answer_obj, dict):

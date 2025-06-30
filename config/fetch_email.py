@@ -66,7 +66,7 @@ def get_message_ids(service, max_results=100, query="category:primary"):
 
 def build_documents_from_messages(service, message_ids):
     documents = []
-
+    print(f"build_documents_from_messages")
     for msg in message_ids:
         msg_data = (
             service.users()
@@ -97,15 +97,16 @@ def build_documents_from_messages(service, message_ids):
 
 
 def store_documents_in_vector_db(documents, user_id: str):
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(documents)
 
+    print(f"🔍 Total split documents: {len(split_docs)}")
     Chroma.from_documents(
         documents=split_docs,
         embedding=OpenAIEmbeddings(),
         persist_directory=CHROMA_DIR,
         collection_name=chroma_collection_name(user_id),
-    ).persist()
+    )
 
 
 def group_documents_by_thread(documents):
@@ -143,7 +144,7 @@ def load_existing_threads_from_chroma(user_id: str):
     threads = group_documents_by_thread(docs)
     return JsonResponse(
         {
-            "stored": 0,
+            "stored": len(docs),
             "collection": chroma_collection_name(user_id),
             "vector_db_path": os.path.abspath(CHROMA_DIR),
             "threads": threads,
@@ -179,7 +180,7 @@ def load_gmail_threads_to_chroma(request):
         new_message_ids = [
             msg for msg in all_message_ids if msg["id"] not in cached_ids
         ]
-
+        print(f"running line 183")
         if new_message_ids:
             documents = build_documents_from_messages(  # <- unchanged helper
                 gmail_service, new_message_ids
@@ -187,12 +188,13 @@ def load_gmail_threads_to_chroma(request):
             if not documents:
                 return JsonResponse({"message": "No valid content to embed."})
 
+            print(f"check num {len(documents)}")
             store_documents_in_vector_db(documents, user_id)  # <- unchanged helper
             save_processed_ids(
                 user_id, cached_ids.union({msg["id"] for msg in new_message_ids})
             )
             threads = group_documents_by_thread(documents)  # <- unchanged helper
-
+            print(f"len documents: {documents}")
             return JsonResponse(
                 {
                     "stored": len(documents),
@@ -201,6 +203,7 @@ def load_gmail_threads_to_chroma(request):
                     "threads": threads,
                 }
             )
+        print(f"running line 206")
         return load_existing_threads_from_chroma(user_id)  # <- unchanged helper
 
     except Exception:
