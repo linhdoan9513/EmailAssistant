@@ -1,0 +1,38 @@
+services:
+  # ──────────────────────────────
+  # 1)  Django  BACK-END
+  # ──────────────────────────────
+  - type: web
+    name: django-backend
+    env: python
+    rootDir: backend          # run commands from /backend
+
+    buildCommand: |
+      pip install -r ../requirements.txt
+      python manage.py collectstatic --noinput
+
+    startCommand: gunicorn config.wsgi:application
+
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings          # because rootDir is backend
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ENV
+        value: production
+      - key: GOOGLE_REDIRECT_URI
+        value: https://emailassistant.onrender.com/oauth2callback/
+      # … your GOOGLE_CLIENT_ID / SECRET, OPENAI_API_KEY, etc.
+
+  # ──────────────────────────────
+  # 2)  React  FRONT-END
+  # ──────────────────────────────
+  - type: static
+    name: frontend
+    rootDir: frontend          # where package.json lives
+    buildCommand: npm run build
+    staticPublishPath: build
+
+    envVars:
+      - key: REACT_APP_API_BASE_URL
+        value: https://emailassistant.onrender.com
